@@ -1,9 +1,10 @@
 from fastapi import *
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 import mysql.connector
 from config import DB_CONFIG
 app=FastAPI()
-
+app.mount("/static", StaticFiles(directory="static"), name="static")
 # Static Pages (Never Modify Code in this Block)
 @app.get("/", include_in_schema=False)
 async def index(request: Request):
@@ -61,7 +62,7 @@ async def get_attractions(page: int, keyword: str = None, category: str = None):
         if ids:
             placeholders = ",".join(["%s"] * len(ids))
             cursor.execute(
-                f"SELECT attraction_id, url FROM attraction_images WHERE attraction_id IN ({placeholders})",
+                f"SELECT attraction_id, url FROM attraction_images WHERE attraction_id IN ({placeholders}) ORDER BY id",
                 ids,
                 )
             images_by_id = {}
@@ -94,7 +95,7 @@ async def get_attraction_by_id(attractionId: int):
             "SELECT id, name, category, description, address, transport, mrt, lat, lng "
             "FROM attractions WHERE id = %s",
             (attractionId,),
-        )
+            )
         row = cursor.fetchone()
 
         if row is None:
@@ -103,12 +104,12 @@ async def get_attraction_by_id(attractionId: int):
             return JSONResponse(
                 status_code=400,
                 content={"error": True, "message": "data incorrect"},
-            )
+                )
 
         cursor.execute(
-            "SELECT url FROM attraction_images WHERE attraction_id = %s",
+            "SELECT url FROM attraction_images WHERE attraction_id = %s ORDER BY id",
             (attractionId,),
-        )
+            )
         row["images"] = [r["url"] for r in cursor.fetchall()]
 
         cursor.close()
@@ -120,7 +121,7 @@ async def get_attraction_by_id(attractionId: int):
         return JSONResponse(
             status_code=500,
             content={"error": True, "message": "server errors"},
-        )
+            )
 
 @app.get("/api/categories")
 async def get_categories():
@@ -142,7 +143,7 @@ async def get_categories():
         return JSONResponse(
             status_code=500,
             content={"error": True, "message": "server errors"},
-        )
+            )
 
 @app.get("/api/mrts")
 async def get_mrts():
