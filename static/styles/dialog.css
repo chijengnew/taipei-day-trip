@@ -1,0 +1,141 @@
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.dialog-overlay.is-open {
+  display: flex;
+}
+
+.dialog-overlay__backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, .25);
+}
+
+.dialog {
+  position: relative;
+  z-index: 1;
+  width: 340px;
+  max-width: calc(100vw - 20px);
+  margin-top: 80px;
+  background-color: #FFFFFF;
+  border-radius: 5px;
+  box-shadow: 0 4px 60px rgba(170, 170, 170, 1);
+  overflow: hidden;
+}
+
+.dialog__bar {
+  height: 10px;
+  background: linear-gradient(270deg, #337788 0%, #66AABB 100%);
+}
+
+.dialog__close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  line-height: 1;
+  color: #666666;
+}
+
+.dialog__main {
+  padding: 25px 15px 20px;
+}
+
+.dialog__title {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 24px;
+  text-align: center;
+  color: #666666;
+  margin-bottom: 15px;
+}
+
+.dialog__form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dialog__input {
+  width: 100%;
+  height: 47px;
+  padding: 15px;
+  font-size: 16px;
+  color: #000000;
+  background-color: #FFFFFF;
+  border: 1px solid #CCCCCC;
+  border-radius: 5px;
+}
+
+.dialog__input::placeholder {
+  color: #757575;
+  font-weight: 500;
+}
+
+.dialog__input:focus-visible {
+  outline: none;
+  border-color: #448899;
+}
+
+.dialog__submit {
+  height: 46px;
+  font-size: 19px;
+  font-weight: 400;
+  color: #FFFFFF;
+  text-align: center;
+  background-color: #448899;
+  border-radius: 5px;
+  transition: background-color .2s;
+}
+
+.dialog__submit:hover {
+  background-color: #66AABB;
+}
+
+.dialog__message {
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.dialog__message[hidden] {
+  display: none;
+}
+
+.dialog__message--error {
+  color: #D0021B;
+}
+
+.dialog__message--success {
+  color: #337788;
+}
+
+.dialog__switch {
+  margin-top: 10px;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 13.3px;
+  text-align: center;
+  color: #666666;
+  cursor: pointer;
+}
+
+.dialog__switch-link {
+  color: #666666;
+}
+
+.dialog [hidden] {
+  display: none;
+}
