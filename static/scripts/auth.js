@@ -185,3 +185,17 @@ signinSubmit.addEventListener("click", handleSignIn);
 signupSubmit.addEventListener("click", handleSignUp);
 
 renderAuthEntry();
+
+const bookingEntry = document.querySelector('.nav__link[href="/booking"]');
+
+if (bookingEntry) {
+  bookingEntry.addEventListener("click", async function (event) {
+    event.preventDefault();
+    const user = await fetchCurrentUser();
+    if (user) {
+      window.location.href = "/booking";
+    } else {
+      openDialog();
+    }
+  });
+}

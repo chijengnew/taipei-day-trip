@@ -1,18 +1,15 @@
 "use strict";
 
 const attractionId = Number(window.location.pathname.split("/").pop());
-
 const nameEl = document.getElementById("attraction-name");
 const subtitleEl = document.getElementById("attraction-subtitle");
 const descriptionEl = document.getElementById("attraction-description");
 const addressEl = document.getElementById("attraction-address");
 const transportEl = document.getElementById("attraction-transport");
-
 const slideshowImage = document.getElementById("slideshow-image");
 const slideshowIndicators = document.getElementById("slideshow-indicators");
 const slideshowPrev = document.getElementById("slideshow-prev");
 const slideshowNext = document.getElementById("slideshow-next");
-
 const priceEl = document.getElementById("booking-price");
 const timeRadios = document.querySelectorAll('input[name="time"]');
 
@@ -88,3 +85,63 @@ timeRadios.forEach((radio) => {
 
 loadAttraction();
 updatePrice();
+
+const bookingSubmit = document.querySelector(".booking__submit");
+const bookingDate = document.getElementById("booking-date");
+const bookingMessage = document.getElementById("booking-message");
+
+function showBookingMessage(text) {
+  bookingMessage.textContent = text;
+  bookingMessage.hidden = false;
+}
+
+function hideBookingMessage() {
+  bookingMessage.textContent = "";
+  bookingMessage.hidden = true;
+}
+
+bookingDate.addEventListener("input", hideBookingMessage);
+
+async function handleBookingSubmit() {
+
+  const user = await fetchCurrentUser();
+  if (!user) {
+    openDialog();
+    return;
+  }
+
+  const date = bookingDate.value;
+  if (!date) {
+    showBookingMessage("Please select a date first.");
+    return;
+  }
+  hideBookingMessage();
+
+  const time = document.querySelector('input[name="time"]:checked').value;
+  const price = parseInt(priceEl.textContent.replace(/[^0-9]/g, ""), 10);
+
+  try {
+    const response = await fetch("/api/booking", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + getToken(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        attractionId: attractionId,
+        date: date,
+        time: time,
+        price: price,
+      }),
+    });
+
+    if (response.ok) {
+      window.location.href = "/booking";
+    } else {
+      showBookingMessage("Booking failed. Please try again later.");
+    }
+  } catch (error) {
+    showBookingMessage("A system error occurred. Please try again later.");
+  }
+}
+bookingSubmit.addEventListener("click", handleBookingSubmit);

@@ -275,3 +275,130 @@ async def sign_in(form: SignInForm):
             status_code=500,
             content={"error": True, "message": "server errors"},
         )
+
+class BookingForm(BaseModel):
+    attractionId: int
+    date: str
+    time: str
+    price: int
+
+@app.get("/api/booking")
+async def get_booking(request: Request):
+    payload = verify_token(request)
+    if payload is None:
+        return JSONResponse(
+            status_code=403,
+            content={"error": True, "message": "Access denied. Please log in."},
+        )
+    try:
+        conn = mysql.connector.connect(**DB_CONFIG)
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute(
+            """
+            SELECT
+                a.id      AS attraction_id,
+                a.name    AS attraction_name,
+                a.address AS attraction_address,
+                b.date    AS date,
+                b.time    AS time,
+                b.price   AS price
+            FROM booking AS b
+            JOIN attractions AS a ON a.id = b.attraction_id
+            WHERE b.member_id = %s
+            """,
+            (payload["id"],),
+        )
+        row = cursor.fetchone()
+
+        if row is None:
+            cursor.close()
+            conn.close()
+            return {"data": None}
+
+        cursor.execute(
+            "SELECT url FROM attraction_images WHERE attraction_id = %s ORDER BY id LIMIT 1",
+            (row["attraction_id"],),
+        )
+        image_row = cursor.fetchone()
+
+        cursor.close()
+        conn.close()
+
+        return {
+            "data": {
+                "attraction": {
+                    "id": row["attraction_id"],
+                    "name": row["attraction_name"],
+                    "address": row["attraction_address"],
+                    "image": image_row["url"] if image_row else None,
+                },
+                "date": row["date"].isoformat(),
+                "time": row["time"],
+                "price": row["price"],
+            }
+        }
+    except Exception:
+        return JSONResponse(
+            status_code=500,
+            content={"error": True, "message": "server errors"},
+        )
+
+@app.post("/api/booking")
+async def create_booking(request: Request, form: BookingForm):
+    payload = verify_token(request)
+    if payload is None:
+        return JSONResponse(
+            status_code=403,
+            content={"error": True, "message": "Access denied. Please log in."},
+        )
+    try:
+        conn = mysql.connector.connect(**DB_CONFIG)
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO booking (member_id, attraction_id, date, time, price)
+            VALUES (%s, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+                attraction_id = VALUES(attraction_id),
+                date          = VALUES(date),
+                time          = VALUES(time),
+                price         = VALUES(price)
+            """,
+            (payload["id"], form.attractionId, form.date, form.time, form.price),
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return {"ok": True}
+    except Exception:
+        return JSONResponse(
+            status_code=500,
+            content={"error": True, "message": "server errors"},
+        )
+
+@app.delete("/api/booking")
+async def delete_booking(request: Request):
+    payload = verify_token(request)
+    if payload is None:
+        return JSONResponse(
+            status_code=403,
+            content={"error": True, "message": "Access denied. Please log in."},
+        )
+    try:
+        conn = mysql.connector.connect(**DB_CONFIG)
+        cursor = conn.cursor()
+
+        cursor.execute("DELETE FROM booking WHERE member_id = %s", (payload["id"],))
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return {"ok": True}
+    except Exception:
+        return JSONResponse(
+            status_code=500,
+            content={"error": True, "message": "server errors"},
+        )
