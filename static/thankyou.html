@@ -1,11 +1,94 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Thank You</title>
-</head>
-<body>
-  
-</body>
+<html lang="zh-TW">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="/static/styles/index.css?v=1.0">
+        <link rel="stylesheet" href="/static/styles/dialog.css?v=1.0">
+        <link rel="stylesheet" href="/static/styles/thankyou.css?v=1.0">
+        <title>訂購完成 - 台北一日遊</title>
+    </head>
+    <body>
+        <header class="header">
+            <div class="header__inner">
+                <a class="logo" href="/">台北一日遊</a>
+                <nav class="nav">
+                    <a class="nav__link" href="/booking">預定行程</a>
+                    <a class="nav__link" id="auth-entry" href="#">登入/註冊</a>
+                </nav>
+            </div>
+        </header>
+
+        <main class="main">
+            <div class="thankyou">
+                <div class="thankyou__check">✓</div>
+                <h1 class="thankyou__title">訂購完成，感謝您的預訂！</h1>
+                <p class="thankyou__order">訂單編號：<span id="order-number"></span></p>
+
+                <div class="order-card" id="order-detail" hidden>
+                    <img class="order-card__image" id="detail-image" src="" alt="">
+                    <div class="order-card__body">
+                        <div class="order-card__head">
+                            <h2 class="order-card__name" id="detail-name"></h2>
+                            <span class="badge" id="detail-status"></span>
+                        </div>
+                        <p class="order-card__row"><span class="order-card__label">地點</span><span id="detail-address"></span></p>
+                        <p class="order-card__row"><span class="order-card__label">日期</span><span id="detail-date"></span></p>
+                        <p class="order-card__row"><span class="order-card__label">時段</span><span id="detail-time"></span></p>
+                        <p class="order-card__row"><span class="order-card__label">費用</span><span id="detail-price"></span></p>
+                        <p class="order-card__row"><span class="order-card__label">聯絡</span><span id="detail-contact"></span></p>
+                    </div>
+                </div>
+
+                <p class="thankyou__message" id="order-message" hidden></p>
+
+                <div class="thankyou__actions">
+                    <a class="thankyou__button" href="/">返回首頁</a>
+                    <a class="thankyou__button thankyou__button--ghost" href="/booking">查看預定行程</a>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p class="footer__text">COPYRIGHT © 2021 台北一日遊</p>
+        </footer>
+
+        <div class="dialog-overlay" id="auth-dialog">
+            <div class="dialog-overlay__backdrop" data-dialog-close></div>
+            <div class="dialog" role="dialog" aria-modal="true">
+                <div class="dialog__bar"></div>
+                <button class="dialog__close" type="button" data-dialog-close aria-label="關閉">✕</button>
+
+                <div class="dialog__main">
+                    <div id="signin-panel">
+                        <h2 class="dialog__title">登入會員帳號</h2>
+                        <div class="dialog__form">
+                            <input class="dialog__input" id="signin-email" type="email" placeholder="輸入電子信箱" autocomplete="email">
+                            <input class="dialog__input" id="signin-password" type="password" placeholder="輸入密碼" autocomplete="current-password">
+                            <button class="dialog__submit" id="signin-submit" type="button">登入帳戶</button>
+                        </div>
+                        <p class="dialog__message" id="signin-message" hidden></p>
+                        <p class="dialog__switch">還沒有帳戶？<span class="dialog__switch-link" id="to-signup">點此註冊</span></p>
+                    </div>
+
+                    <div id="signup-panel" hidden>
+                        <h2 class="dialog__title">註冊會員帳號</h2>
+                        <div class="dialog__form">
+                            <input class="dialog__input" id="signup-name" type="text" placeholder="輸入姓名" autocomplete="name">
+                            <input class="dialog__input" id="signup-email" type="email" placeholder="輸入電子郵件" autocomplete="email">
+                            <input class="dialog__input" id="signup-password" type="password" placeholder="輸入密碼" autocomplete="new-password">
+                            <button class="dialog__submit" id="signup-submit" type="button">註冊新帳戶</button>
+                        </div>
+                        <p class="dialog__message" id="signup-message" hidden></p>
+                        <p class="dialog__switch">已經有帳戶了？<span class="dialog__switch-link" id="to-signin">點此登入</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script src="/static/scripts/auth.js?v=2.0"></script>
+        <script src="/static/scripts/thankyou.js?v=1.0"></script>
+    </body>
 </html>

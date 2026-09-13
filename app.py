@@ -5,7 +5,11 @@ from pydantic import BaseModel
 from datetime import datetime, timedelta, timezone
 import mysql.connector
 import jwt
-from config import DB_CONFIG, JWT_KEY, JWT_ALGORITHM
+import requests
+from config import (
+    DB_CONFIG, JWT_KEY, JWT_ALGORITHM,
+    TAPPAY_PARTNER_KEY, TAPPAY_MERCHANT_ID, TAPPAY_PAY_BY_PRIME_URL,
+)
 app=FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 # Static Pages (Never Modify Code in this Block)
@@ -282,6 +286,31 @@ class BookingForm(BaseModel):
     time: str
     price: int
 
+class OrderContact(BaseModel):
+    name: str
+    email: str
+    phone: str
+
+class OrderAttraction(BaseModel):
+    id: int
+    name: str
+    address: str
+    image: str
+
+class OrderTrip(BaseModel):
+    attraction: OrderAttraction
+    date: str
+    time: str
+
+class OrderData(BaseModel):
+    price: int
+    trip: OrderTrip
+    contact: OrderContact
+
+class OrderForm(BaseModel):
+    prime: str
+    order: OrderData
+
 @app.get("/api/booking")
 async def get_booking(request: Request):
     payload = verify_token(request)
@@ -397,6 +426,175 @@ async def delete_booking(request: Request):
         conn.close()
 
         return {"ok": True}
+    except Exception:
+        return JSONResponse(
+            status_code=500,
+            content={"error": True, "message": "server errors"},
+        )
+
+@app.post("/api/orders")
+async def create_order(request: Request, form: OrderForm):
+    payload = verify_token(request)
+    if payload is None:
+        return JSONResponse(
+            status_code=403,
+            content={"error": True, "message": "Access denied. Please log in."},
+        )
+    try:
+        order_number = datetime.now().strftime("%Y%m%d%H%M%S") + str(payload["id"])
+        conn = mysql.connector.connect(**DB_CONFIG)
+        cursor = conn.cursor()
+
+
+        cursor.execute(
+            """
+            INSERT INTO orders
+                (number, member_id, attraction_id, date, time, price,
+                 contact_name, contact_email, contact_phone, status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'UNPAID')
+            """,
+            (
+                order_number, payload["id"], form.order.trip.attraction.id,
+                form.order.trip.date, form.order.trip.time, form.order.price,
+                form.order.contact.name, form.order.contact.email, form.order.contact.phone,
+            ),
+        )
+        order_id = cursor.lastrowid
+        conn.commit()
+
+
+        tappay_res = requests.post(
+            TAPPAY_PAY_BY_PRIME_URL,
+            headers={
+                "Content-Type": "application/json",
+                "x-api-key": TAPPAY_PARTNER_KEY,
+            },
+            json={
+                "prime": form.prime,
+                "partner_key": TAPPAY_PARTNER_KEY,
+                "merchant_id": TAPPAY_MERCHANT_ID,
+                "amount": form.order.price,
+                "details": "台北一日遊：" + form.order.trip.attraction.name,
+                "cardholder": {
+                    "phone_number": form.order.contact.phone,
+                    "name": form.order.contact.name,
+                    "email": form.order.contact.email,
+                },
+            },
+            timeout=30,
+        ).json()
+
+        pay_status = tappay_res.get("status")
+        pay_msg = tappay_res.get("msg", "")
+
+
+        cursor.execute(
+            """
+            INSERT INTO payment
+                (order_id, rec_trade_id, bank_transaction_id, status, msg, amount)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """,
+            (
+                order_id,
+                tappay_res.get("rec_trade_id"),
+                tappay_res.get("bank_transaction_id"),
+                pay_status, pay_msg, form.order.price,
+            ),
+        )
+
+        if pay_status == 0:
+            cursor.execute("UPDATE orders SET status = 'PAID' WHERE id = %s", (order_id,))
+            cursor.execute("DELETE FROM booking WHERE member_id = %s", (payload["id"],))
+            message = "付款成功"
+        else:
+            message = "付款失敗：" + pay_msg
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return {
+            "data": {
+                "number": order_number,
+                "payment": {"status": pay_status, "message": message},
+            }
+        }
+    except Exception:
+        return JSONResponse(
+            status_code=500,
+            content={"error": True, "message": "server errors"},
+        )
+
+@app.get("/api/order/{orderNumber}")
+async def get_order(request: Request, orderNumber: str):
+    payload = verify_token(request)
+    if payload is None:
+        return JSONResponse(
+            status_code=403,
+            content={"error": True, "message": "Access denied. Please log in."},
+        )
+    try:
+        conn = mysql.connector.connect(**DB_CONFIG)
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute(
+            """
+            SELECT
+                o.number        AS number,
+                o.date          AS date,
+                o.time          AS time,
+                o.price         AS price,
+                o.status        AS status,
+                o.contact_name  AS contact_name,
+                o.contact_email AS contact_email,
+                o.contact_phone AS contact_phone,
+                a.id            AS attraction_id,
+                a.name          AS attraction_name,
+                a.address       AS attraction_address
+            FROM orders AS o
+            JOIN attractions AS a ON a.id = o.attraction_id
+            WHERE o.number = %s AND o.member_id = %s
+            """,
+            (orderNumber, payload["id"]),
+        )
+        row = cursor.fetchone()
+
+        if row is None:
+            cursor.close()
+            conn.close()
+            return {"data": None}
+
+        cursor.execute(
+            "SELECT url FROM attraction_images WHERE attraction_id = %s ORDER BY id LIMIT 1",
+            (row["attraction_id"],),
+        )
+        image_row = cursor.fetchone()
+
+        cursor.close()
+        conn.close()
+
+        return {
+            "data": {
+                "number": row["number"],
+                "price": row["price"],
+                "status": row["status"],
+                "trip": {
+                    "attraction": {
+                        "id": row["attraction_id"],
+                        "name": row["attraction_name"],
+                        "address": row["attraction_address"],
+                        "image": image_row["url"] if image_row else None,
+                    },
+                    "date": row["date"].isoformat(),
+                    "time": row["time"],
+                },
+                "contact": {
+                    "name": row["contact_name"],
+                    "email": row["contact_email"],
+                    "phone": row["contact_phone"],
+                },
+            }
+        }
     except Exception:
         return JSONResponse(
             status_code=500,

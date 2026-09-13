@@ -1,0 +1,150 @@
+.thankyou {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.thankyou__check {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 24px;
+    border-radius: 50%;
+    background: #448899;
+    color: #fff;
+    font-size: 40px;
+    line-height: 72px;
+    font-weight: 700;
+}
+
+.thankyou__title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #000;
+    margin-bottom: 12px;
+}
+
+.thankyou__order {
+    color: #666;
+    margin-bottom: 32px;
+}
+
+.thankyou__order span {
+    font-weight: 700;
+    color: #333;
+}
+
+.order-card {
+    display: flex;
+    gap: 20px;
+    text-align: left;
+    border: 1px solid #e8e8e8;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+    margin-bottom: 32px;
+}
+
+.order-card__image {
+    width: 160px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.order-card__body {
+    flex: 1;
+}
+
+.order-card__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.order-card__name {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.order-card__row {
+    display: flex;
+    gap: 12px;
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 8px;
+}
+
+.order-card__label {
+    color: #999;
+    min-width: 40px;
+    flex-shrink: 0;
+}
+
+.badge {
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.badge--paid {
+    background: #e3f4ec;
+    color: #1a8a5a;
+}
+
+.badge--unpaid {
+    background: #fdecec;
+    color: #d64545;
+}
+
+.thankyou__message {
+    color: #666;
+    margin-bottom: 32px;
+}
+
+.thankyou__actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.thankyou__button {
+    display: inline-block;
+    padding: 12px 28px;
+    border-radius: 8px;
+    background: #448899;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.thankyou__button:hover {
+    background: #35707e;
+    box-shadow: 0 4px 12px rgba(68, 136, 153, 0.3);
+}
+
+.thankyou__button--ghost {
+    background: #fff;
+    color: #448899;
+    border: 1px solid #448899;
+}
+
+.thankyou__button--ghost:hover {
+    background: #f0f7f9;
+    color: #35707e;
+}
+
+@media (max-width: 600px) {
+    .order-card {
+        flex-direction: column;
+    }
+    .order-card__image {
+        width: 100%;
+        height: 180px;
+    }
+}
