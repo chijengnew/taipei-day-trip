@@ -113,6 +113,19 @@
   color: #757575;
 }
 
+.tpfield {
+  height: 40px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+}
+
+.tpfield iframe {
+  width: 100%;
+  height: 30px;
+  border: none;
+}
+
 .contact__notice {
   font-size: 16px;
   font-weight: 700;
@@ -161,7 +174,7 @@
 
   .trip__image {
     width: 100%;
-    height: auto;
+    height: 200px;
   }
 
   .trip__info {
@@ -171,13 +184,5 @@
   .trip__delete {
     position: static;
     margin-left: auto;
-  }
-
-  .field {
-    flex-wrap: wrap;
-  }
-
-  .field__input {
-    width: 100%;
   }
 }
