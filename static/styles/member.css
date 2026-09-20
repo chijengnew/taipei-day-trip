@@ -1,0 +1,119 @@
+.member {
+  flex: 1;
+  width: 100%;
+  max-width: 600px;
+  margin-inline: auto;
+  padding: 40px 15px 60px;
+}
+
+.member__greeting {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #666666;
+}
+
+.member__divider {
+  border: none;
+  border-top: 1px solid #E8E8E8;
+  margin: 28px 0;
+}
+
+.member__title {
+  margin: 0 0 18px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #666666;
+}
+
+.member__subtitle {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: #757575;
+}
+
+.member__config {
+  margin: 0 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.member__config-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.member__label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #666666;
+}
+
+.member__value {
+  font-size: 14px;
+  color: #448899;
+  word-break: break-all;
+  line-height: 1.5;
+}
+
+.member__value--empty {
+  color: #999999;
+}
+
+#mcp-token {
+  padding: 10px 12px;
+  background-color: #F5F5F5;
+  border: 1px solid #E8E8E8;
+  border-radius: 5px;
+  font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 13px;
+  color: #1E90FF;
+}
+
+#mcp-token.member__value--empty {
+  color: #999999;
+  font-family: inherit;
+}
+
+.member__button {
+  display: inline-block;
+  padding: 11px 20px;
+  border-radius: 5px;
+  background-color: #448899;
+  color: #FFFFFF;
+  font-size: 15px;
+  font-weight: 500;
+  transition: background-color .2s;
+}
+
+.member__button:hover {
+  background-color: #66AABB;
+}
+
+.member__button:disabled {
+  background-color: #A5C6CE;
+  cursor: not-allowed;
+}
+
+.member__message {
+  margin: 12px 0 0;
+  font-size: 14px;
+  color: #448899;
+}
+
+.member__message--error {
+  color: #D0021B;
+}
+
+@media (max-width: 600px) {
+  .member {
+    padding: 30px 15px 50px;
+  }
+
+  .member__button {
+    width: 100%;
+    text-align: center;
+  }
+}
