@@ -82,10 +82,12 @@ async function fetchCurrentUser() {
 async function renderAuthEntry() {
   const user = await fetchCurrentUser();
   if (user) {
-    authEntry.textContent = "登出系統";
+    authEntry.textContent = "會員中心";
+    authEntry.href = "/member";
     authEntry.dataset.state = "signed-in";
   } else {
     authEntry.textContent = "登入/註冊";
+    authEntry.href = "#";
     authEntry.dataset.state = "signed-out";
   }
 }
@@ -166,12 +168,11 @@ function handleSignOut() {
 }
 
 authEntry.addEventListener("click", function (event) {
-  event.preventDefault();
   if (authEntry.dataset.state === "signed-in") {
-    handleSignOut();
-  } else {
-    openDialog();
+    return;
   }
+  event.preventDefault();
+  openDialog();
 });
 
 authDialog.querySelectorAll("[data-dialog-close]").forEach(function (element) {
@@ -183,6 +184,22 @@ toSignin.addEventListener("click", showSigninForm);
 
 signinSubmit.addEventListener("click", handleSignIn);
 signupSubmit.addEventListener("click", handleSignUp);
+
+[signinEmail, signinPassword].forEach(function (input) {
+  input.addEventListener("keydown", function (event) {
+    if (event.key === "Enter") {
+      handleSignIn();
+    }
+  });
+});
+
+[signupName, signupEmail, signupPassword].forEach(function (input) {
+  input.addEventListener("keydown", function (event) {
+    if (event.key === "Enter") {
+      handleSignUp();
+    }
+  });
+});
 
 renderAuthEntry();
 

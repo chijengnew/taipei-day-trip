@@ -1,0 +1,12 @@
+{
+  "name": "taipei-day-trip-market",
+  "interface": { "displayName": "Taipei Day Trip Plugins" },
+  "plugins": [
+    {
+      "name": "taipei-day-trip",
+      "source": { "source": "local", "path": "./plugins/trip-plugin" },
+      "policy": { "installation": "INSTALLED_BY_DEFAULT" },
+      "category": "Productivity"
+    }
+  ]
+}

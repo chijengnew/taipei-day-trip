@@ -6,11 +6,22 @@ from datetime import datetime, timedelta, timezone
 import mysql.connector
 import jwt
 import requests
+import secrets
+import contextlib
+from mcp.server.fastmcp import FastMCP, Context
+from mcp.server.transport_security import TransportSecuritySettings
 from config import (
     DB_CONFIG, JWT_KEY, JWT_ALGORITHM,
     TAPPAY_PARTNER_KEY, TAPPAY_MERCHANT_ID, TAPPAY_PAY_BY_PRIME_URL,
-)
-app=FastAPI()
+    BOOKING_PAGE_URL,
+    )
+@contextlib.asynccontextmanager
+async def app_lifespan(app):
+    async with contextlib.AsyncExitStack() as stack:
+        await stack.enter_async_context(mcp.session_manager.run())
+        yield
+
+app = FastAPI(lifespan=app_lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 # Static Pages (Never Modify Code in this Block)
 @app.get("/", include_in_schema=False)
@@ -27,6 +38,10 @@ async def thankyou(request: Request):
 	return FileResponse("./static/thankyou.html", media_type="text/html")
 
 PAGE_SIZE = 8
+
+@app.get("/member", include_in_schema=False)
+async def member(request: Request):
+    return FileResponse("./static/member.html", media_type="text/html")
 
 @app.get("/api/attractions")
 async def get_attractions(page: int, keyword: str = None, category: str = None):
@@ -208,6 +223,23 @@ def verify_token(request):
     except jwt.InvalidTokenError:
         return None
 
+def generate_mcp_token():
+    return secrets.token_hex(32)
+
+def get_member_id_by_mcp_token(token):
+    if not token:
+        return None
+    try:
+        conn = mysql.connector.connect(**DB_CONFIG)
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT member_id FROM mcp_token WHERE token = %s", (token,))
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        return row["member_id"] if row else None
+    except Exception:
+        return None
+
 @app.post("/api/user")
 async def sign_up(form: SignUpForm):
     try:
@@ -274,6 +306,69 @@ async def sign_in(form: SignInForm):
 
         return {"token": create_token(user)}
 
+    except Exception:
+        return JSONResponse(
+            status_code=500,
+            content={"error": True, "message": "server errors"},
+        )
+
+@app.get("/api/member/token")
+async def get_member_mcp_token(request: Request):
+    payload = verify_token(request)
+    if payload is None:
+        return JSONResponse(
+            status_code=403,
+            content={"error": True, "message": "Access denied. Please log in."},
+        )
+    try:
+        conn = mysql.connector.connect(**DB_CONFIG)
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute(
+            "SELECT token FROM mcp_token WHERE member_id = %s",
+            (payload["id"],),
+        )
+        row = cursor.fetchone()
+
+        cursor.close()
+        conn.close()
+
+        return {"data": {"token": row["token"]} if row else None}
+    except Exception:
+        return JSONResponse(
+            status_code=500,
+            content={"error": True, "message": "server errors"},
+        )
+
+@app.post("/api/member/token")
+async def create_member_mcp_token(request: Request):
+    payload = verify_token(request)
+    if payload is None:
+        return JSONResponse(
+            status_code=403,
+            content={"error": True, "message": "Access denied. Please log in."},
+        )
+    try:
+        token = generate_mcp_token()
+
+        conn = mysql.connector.connect(**DB_CONFIG)
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO mcp_token (member_id, token)
+            VALUES (%s, %s)
+            ON DUPLICATE KEY UPDATE
+                token      = VALUES(token),
+                created_at = CURRENT_TIMESTAMP
+            """,
+            (payload["id"], token),
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return {"data": {"token": token}}
     except Exception:
         return JSONResponse(
             status_code=500,
@@ -600,3 +695,88 @@ async def get_order(request: Request, orderNumber: str):
             status_code=500,
             content={"error": True, "message": "server errors"},
         )
+
+mcp = FastMCP(
+    "台北一日遊",
+    streamable_http_path="/",
+    stateless_http=True,
+    transport_security=TransportSecuritySettings(
+        enable_dns_rebinding_protection=False
+    ),
+)
+
+def _search_attractions(keyword):
+    conn = mysql.connector.connect(**DB_CONFIG)
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(
+        """
+        SELECT id, name, description
+        FROM attractions
+        WHERE mrt = %s OR name LIKE %s
+        ORDER BY id
+        """,
+        (keyword, f"%{keyword}%"),
+    )
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return rows
+
+def _create_booking_for_member(member_id, attraction_id, date, time, price):
+    conn = mysql.connector.connect(**DB_CONFIG)
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        INSERT INTO booking (member_id, attraction_id, date, time, price)
+        VALUES (%s, %s, %s, %s, %s)
+        ON DUPLICATE KEY UPDATE
+            attraction_id = VALUES(attraction_id),
+            date          = VALUES(date),
+            time          = VALUES(time),
+            price         = VALUES(price)
+        """,
+        (member_id, attraction_id, date, time, price),
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+@mcp.tool(name="search_attractions", title="搜尋台北市景點", description="透過關鍵字和捷運站名搜尋台北市一日旅遊的景點")
+def search_attractions(keyword: str) -> dict:
+    try:
+        rows = _search_attractions(keyword)
+        return {
+            "data": [
+                {"id": r["id"], "name": r["name"], "description": r["description"]}
+                for r in rows
+            ]
+        }
+    except Exception:
+        return {"error": True}
+
+@mcp.tool(name="add_to_cart", title="預定景點導覽行程", description="根據景點編號、日期、時間、價格，預定一個景點導覽行程")
+def add_to_cart(attraction_id: int, date: str, time: str, price: int, ctx: Context) -> dict:
+    try:
+        request = ctx.request_context.request
+        auth = request.headers.get("authorization", "") if request else ""
+        if not auth.startswith("Bearer "):
+            return {"error": True}
+        token = auth[len("Bearer "):].strip()
+
+        member_id = get_member_id_by_mcp_token(token)
+        if member_id is None:
+            return {"error": True}
+
+        if time not in ("morning", "afternoon"):
+            return {"error": True}
+
+        _create_booking_for_member(member_id, attraction_id, date, time, price)
+
+        return {
+            "ok": True,
+            "message": f"台北導覽行程，預定成功，請到 {BOOKING_PAGE_URL} 完成付款。",
+        }
+    except Exception:
+        return {"error": True}
+
+app.mount("/mcp", mcp.streamable_http_app())
