@@ -1,14 +1,14 @@
-name: taipei-day-trip-booking
-description:
-預定台北一日遊導覽行程。
-透過 Taipei Day Trip MCP 的搜尋與預定工具完成預定。
+---
+name: booking
+description: 預訂台北一日遊導覽行程。當使用者想搜尋台北市景點並預訂一日遊行程時，輸入關鍵字，例如「預訂台北一日遊行程」「我想訂台北景點導覽」「book a Taipei day trip」，即可透過 Taipei Day Trip MCP 的搜尋與預訂工具完成預訂。
+---
 
 # 台北一日遊預定流程
 
-當使用者想預定台北一日遊行程時，依序完成以下步驟。
+當使用者想預訂台北一日遊行程時，依序完成以下步驟。
 本流程會用到 Taipei Day Trip MCP 伺服器的兩個工具：
 search_attractions（搜尋台北市景點）
-add_to_cart（預定景點導覽行程）
+add_to_cart（預訂景點導覽行程）
 
 ## 步驟 1：詢問搜尋關鍵字
 詢問使用者想去的景點關鍵字或捷運站名，例如「北投」或「中正紀念堂」。
@@ -36,4 +36,4 @@ price：morning 為 2000；afternoon 為 2500
 
 ## 步驟 7：顯示付款連結
 若回傳 ok，將回傳 message 中的付款頁面連結顯示給使用者，請他前往完成付款。
-若回傳 error，告知預定失敗，請確認 MCP 設定是否已填入有效金鑰。
+若回傳 error，告知預訂失敗，請確認 MCP 金鑰（環境變數 TAIPEI_MCP_TOKEN）是否已正確設定。
